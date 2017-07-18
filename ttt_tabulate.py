@@ -1,5 +1,5 @@
 # Auto-extracted from the Code Words article
-import logic as E; E.ChoiceNode = E.memoize(E.ChoiceNode)
+import nway_logic as E; E.ChoiceNode = E.memoize(E.ChoiceNode)
 import tictactoe as T
 
 def exhaust(human_to_move):
@@ -11,7 +11,9 @@ def exhaust(human_to_move):
             all_responses[AI_to_move] = tuple(reversed(AI_to_move))
 
 all_responses = {}
-exhaust(T.empty_grid)
+print(all_responses)
+exit()
+
 O_tables = [{grid: (Os2>>square)&1
              for grid,(_,Os2) in all_responses.items()}
             for square in range(9)]
