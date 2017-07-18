@@ -54,21 +54,36 @@ print("There are {} games under max_play".format(len(all_responses)))
 
 ####
 
+def extend(env, var, value):
+    result = dict(env)
+    result[var] = value
+    return result
+
 class Node(object):
     def evaluate(self, env):
         abstract
     def __call__(self, if0, if1):
         return Choice(self, if0, if1)
+    def find(self, goal, env):
+        abstract
 
 class ConstantNode(Node):
     def __init__(self, value): self.value = value
     def __repr__(self): return repr(self.value)
     def evaluate(self, env): return self.value
+    def find(self, goal, env):
+        if self.value == goal: yield env
 
 class VariableNode(Node):
     def __init__(self, name): self.name = name
     def __repr__(self): return self.name
     def evaluate(self, env): return env[self]
+    def find(self, goal, env):
+        if self not in env:
+            env = extend(env, self, goal)
+            yield env
+        elif env[self] == goal:
+            yield env
 
 class ChoiceNode(Node):
     def __init__(self, index, if0, if1):
@@ -78,20 +93,45 @@ class ChoiceNode(Node):
     def evaluate(self, env):
         branch = (self.if0, self.if1)[self.index.evaluate(env)]
         return branch.evaluate(env)
+    def find(self, goal, env):
+        left = list()
+        for env1 in self.index.find(0, env):
+            for env2 in self.if0.find(goal, env1):
+                left.append(tuple(env2.items()))
+                yield env2
+        right = list()
+        for env1 in self.index.find(1, env):
+            for env2 in self.if1.find(goal, env1):
+                right.append(tuple(env2.items()))
+                yield env2
 
 Variable = VariableNode
 Constant = memoize(ConstantNode)
 const0,const1 = Constant(0), Constant(1)
 
-#def Choice(index, if0, if1):
-#    if if0 == if1:
-#        return if0
-#    elif (if0, if1) == (const0, const1):
-#        return index
-#    else:
-#        return ChoiceNode(index, if0, if1)
+def Choice(index, if0, if1):
+    if if0 == if1:
+        return if0
+    elif (if0, if1) == (const0, const1):
+        return index
+    else:
+        return ChoiceNode(index, if0, if1)
 
-Choice = memoize(ChoiceNode)
+Choice = memoize(Choice)
+
+def subst_for_first_var(table, first_var_value):
+    return {keys[1:]: output
+            for keys, output in table.items() if keys[0] == first_var_value}
+
+def express(variables, table):
+    if not table:
+        return const0
+    elif len(table) == 1:
+        return Constant(list(table.values())[0])
+    else:
+        first_var, rest_vars = variables[0], variables[1:]
+        return first_var(express(rest_vars, subst_for_first_var(table, 0)),
+                         express(rest_vars, subst_for_first_var(table, 1)))
 
 
 squares = range(9)
@@ -115,3 +155,47 @@ O_nodes = [express(XO_variables, {XO_values(grid): value
            for table in O_tables]
 
 print("{} memos".format(len(Choice._memos)))
+
+Choice._memos.clear()
+squares = (4, 0,2,6,8, 7,1,3,5)
+def combine(xs, os): return sum(zip(xs, os), ())
+def express(variables, table):
+    if not table:
+        return const0
+    elif len(table) == 1:
+        return Constant(list(table.values())[0])
+    else:
+        first_var, rest_vars = variables[0], variables[1:]
+        domain = set(row[0] for row in table.keys())
+        if len(domain) == 1:
+            value = next(iter(domain))
+            return express(rest_vars, subst_for_first_var(table, value))
+        return first_var(express(rest_vars, subst_for_first_var(table, 0)),
+                         express(rest_vars, subst_for_first_var(table, 1)))
+O_nodes = [express(XO_variables, {XO_values(grid): value
+                                 for grid, value in table.items()})
+           for table in O_tables]
+print("{} memos".format(len(Choice._memos)))
+
+###
+
+Choice._memos.clear()
+def satisfy(tree, goal):
+    return next(tree.find(goal, dict()), None)
+def is_valid(claim):
+    return satisfy(claim, 0) is None
+
+a = Variable('a')
+b = Variable('b')
+c = Variable('c')
+p = Variable('p')
+q = Variable('q')
+
+def Equiv(p, q): return p(~q, q)
+
+Node.__invert__ = lambda self: self(const1, const0)
+
+claim = Equiv(p(a, q(b,c)), q(p(a,b), p(a,c)))
+
+print("Proof exercise: {}".format(is_valid(claim)))
+
