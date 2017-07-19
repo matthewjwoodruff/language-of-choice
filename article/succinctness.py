@@ -1,3 +1,4 @@
+indentation = 0
 def memoize(f):
     def memoized(*args):
         try: return memoized._memos[args]
@@ -25,6 +26,7 @@ class ConstantNode(Node):
     def __init__(self, value): self.value = value
     def evaluate(self, env): return self.value
     def __call__(self, *branches): return branches[self.value]
+    def __repr__(self): return repr(self.value)
 
 Constant = memoize(ConstantNode)
 const0, const1 = Constant(0), Constant(1)
@@ -38,6 +40,8 @@ class ChoiceNode(Node):
     def __init__(self, rank, if0, if1):
         # structural correctness
         assert(rank < if0.rank and rank < if1.rank)
+        spaces = "".join([" "]*indentation)
+        print("{}creating ChoiceNode {}".format(spaces, str(id(self))[-5:]))
         self.rank = rank
         self.if0 = if0
         self.if1 = if1
@@ -49,17 +53,30 @@ class ChoiceNode(Node):
         if (if0, if1) == (const0, const1):
             return self
         return build_choice(self, if0, if1)
+    def __repr__(self):
+        return "{}({}, {})".format(str(id(self))[-5:], str(id(self.if0))[-5:], str(id(self.if1))[-5:])
 
 build_node = memoize(ChoiceNode)
 
 @memoize
 def build_choice(node, if0, if1):
+    global indentation
+    indentation += 2
+    spaces = "".join([" "] * indentation)
+    print("{}building {}({},{})".format(spaces, str(id(node))[-5:], str(id(if0))[-5:], str(id(if1))[-5:]))
     top = min(node.rank, if0.rank, if1.rank)
     cases = [subst(node, top, value)(subst(if0, top, value),
                                      subst(if1, top, value))
              for value in (0,1)]
-
-    return make_node(top, *cases)
+    #
+    print("{}cases ({}, {})".format(spaces, cases[0], cases[1]))
+    print("{}calling make_node for rank {}: ({},{})".format(spaces, top, str(id(cases[0]))[-5:], str(id(cases[1]))[-5:]))
+    newnode = make_node(top, *cases)
+    print("{}got {}".format(spaces, str(id(newnode))[-5:]))
+    indentation -= 2
+    if indentation == 0:
+        print("")
+    return newnode
 
 def make_node(rank, if0, if1):
     if if0 is if1: return if0
@@ -94,6 +111,7 @@ def satisfy(node, goal):
         hand branch???  I think this may be a bug, in fact.
 
         """
+        print("{} vs {}".format(node, goal))
         if node.if0.value in (None, goal): (node, env[node.rank]) = (node.if0, 0)
         elif node.if1.value in (None, goal): (node, env[node.rank]) = (node.if1, 1)
         else: return None
@@ -105,5 +123,26 @@ c = Variable(2)
 p = Variable(3)
 q = Variable(4)
 
-claim = Equiv(p(a, q(b,c)), q(p(a,b), p(a,c)))
+print("a: {}".format(repr(a)))
+print("b: {}".format(repr(b)))
+print("c: {}".format(repr(c)))
+print("p: {}".format(repr(p)))
+print("q: {}".format(repr(q)))
+
+print("--- q(b,c) ---")
+print(repr(q(b,c)))
+
+print("\n--- FIRST --- ")
+first = p(a, q(b,c))
+print("--- SECOND --- ")
+second = q(p(a,b), p(a,c))
+print("--- CLAIM --- ")
+claim = Equiv(first, second)
+print("---       ----")
+
+print("q(b,c): {}".format(q(b,c)))
+print("p(a, q(b,c)): {}".format(p(a, q(b, c))))
+
+print("Claim {} (Equiv({}, {})".format(claim, first, second))
 print("Proof exercise: {}".format(is_valid(claim)))
+print(satisfy(first, 1))
