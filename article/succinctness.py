@@ -1,3 +1,4 @@
+names = dict()
 indentation = 0
 def memoize(f):
     def memoized(*args):
@@ -41,7 +42,7 @@ class ChoiceNode(Node):
         # structural correctness
         assert(rank < if0.rank and rank < if1.rank)
         spaces = "".join([" "]*indentation)
-        print("{}creating ChoiceNode {}".format(spaces, str(id(self))[-5:]))
+
         self.rank = rank
         self.if0 = if0
         self.if1 = if1
@@ -54,25 +55,31 @@ class ChoiceNode(Node):
             return self
         return build_choice(self, if0, if1)
     def __repr__(self):
-        return "{}({}, {})".format(str(id(self))[-5:], str(id(self.if0))[-5:], str(id(self.if1))[-5:])
+        global names
+        return "{}({}, {})".format(names[id(self)], names[id(self.if0)], names[id(self.if1)])
 
 build_node = memoize(ChoiceNode)
 
 @memoize
 def build_choice(node, if0, if1):
     global indentation
+    global names
     indentation += 2
     spaces = "".join([" "] * indentation)
-    print("{}building {}({},{})".format(spaces, str(id(node))[-5:], str(id(if0))[-5:], str(id(if1))[-5:]))
+    print("{}building {}({},{})".format(spaces, names[id(node)], names[id(if0)], names[id(if1)]))
     top = min(node.rank, if0.rank, if1.rank)
     cases = [subst(node, top, value)(subst(if0, top, value),
                                      subst(if1, top, value))
              for value in (0,1)]
     #
-    print("{}cases ({}, {})".format(spaces, cases[0], cases[1]))
-    print("{}calling make_node for rank {}: ({},{})".format(spaces, top, str(id(cases[0]))[-5:], str(id(cases[1]))[-5:]))
+    print("{}calling make_node for rank {}: ({},{})".format(spaces, top, names[id(if0)], names[id(if1)]))
     newnode = make_node(top, *cases)
-    print("{}got {}".format(spaces, str(id(newnode))[-5:]))
+    try:
+        print("{}got existing node {}".format(spaces,names[id(newnode)]))
+    except KeyError:
+        names[id(newnode)] = "{}({},{})".format(names[id(node)], names[id(cases[0])], names[id(cases[1])])
+        print("{}got new node {}".format(spaces,names[id(newnode)]))
+
     indentation -= 2
     if indentation == 0:
         print("")
@@ -117,11 +124,18 @@ def satisfy(node, goal):
         else: return None
     return env if node.value == goal else None
 
+names[id(const0)] = '0'
+names[id(const1)] = '1'
 a = Variable(0)
+names[id(a)] = "a"
 b = Variable(1)
+names[id(b)] = "b"
 c = Variable(2)
+names[id(c)] = "c"
 p = Variable(3)
+names[id(p)] = "p"
 q = Variable(4)
+names[id(q)] = "q"
 
 print("a: {}".format(repr(a)))
 print("b: {}".format(repr(b)))
