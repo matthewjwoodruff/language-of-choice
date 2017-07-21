@@ -68,6 +68,7 @@ def build_choice(node, if0, if1):
     spaces = "".join([" "] * indentation)
     print("{}building {}({},{})".format(spaces, names[id(node)], names[id(if0)], names[id(if1)]))
     top = min(node.rank, if0.rank, if1.rank)
+    print("{}top={}".format(spaces,top))
     cases = [subst(node, top, value)(subst(if0, top, value),
                                      subst(if1, top, value))
              for value in (0,1)]
@@ -77,7 +78,7 @@ def build_choice(node, if0, if1):
     try:
         print("{}got existing node {}".format(spaces,names[id(newnode)]))
     except KeyError:
-        names[id(newnode)] = "{}({},{})".format(names[id(node)], names[id(cases[0])], names[id(cases[1])])
+        names[id(newnode)] = str(id(newnode))[-2:]#"{}({},{})".format(names[id(node)], names[id(cases[0])], names[id(cases[1])])
         print("{}got new node {}".format(spaces,names[id(newnode)]))
 
     indentation -= 2
@@ -145,6 +146,15 @@ print("q: {}".format(repr(q)))
 
 print("--- q(b,c) ---")
 print(repr(q(b,c)))
+
+print(q(b,c).evaluate(dict(zip((q.rank,b.rank,c.rank),(0,0,0)))))
+print(q(b,c).evaluate(dict(zip((q.rank,b.rank,c.rank),(0,0,1)))))
+print(q(b,c).evaluate(dict(zip((q.rank,b.rank,c.rank),(0,1,0)))))
+print(q(b,c).evaluate(dict(zip((q.rank,b.rank,c.rank),(0,1,1)))))
+print(q(b,c).evaluate(dict(zip((q.rank,b.rank,c.rank),(1,0,0)))))
+print(q(b,c).evaluate(dict(zip((q.rank,b.rank,c.rank),(1,0,1)))))
+print(q(b,c).evaluate(dict(zip((q.rank,b.rank,c.rank),(1,1,0)))))
+print(q(b,c).evaluate(dict(zip((q.rank,b.rank,c.rank),(1,1,1)))))
 
 print("\n--- FIRST --- ")
 first = p(a, q(b,c))
