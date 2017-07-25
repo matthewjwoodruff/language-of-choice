@@ -70,7 +70,9 @@ def build_choice(node, if0, if1):
     cases = [subst(node, top, value)(subst(if0, top, value),
                                      subst(if1, top, value))
              for value in (0, 1)]
-    return make_node(tname, top, *cases)
+    new_node = make_node(tname, top, *cases)
+    print("{}({}, {}) = {}".format(node, if0, if1, new_node))
+    return new_node
 
 def make_node(name, rank, if0, if1):
     if if0 is if1: return if0
@@ -90,4 +92,11 @@ c = Variable('c', 2)
 p = Variable('p', 3)
 q = Variable('q', 4)
 
-print(p(a, q(b,c)))
+print("Building p(a, q(b,c))")
+p(a, q(b,c))
+print("Building q(p(a,b), p(a,c))")
+q(p(a,b), p(a,c))
+print("Building ~q(p(a,b), p(a,c))")
+~q(p(a,b), p(a,c))
+print("Building Equiv(p(a, q(b,c)), q(p(a,b), p(a,c)))")
+Equiv(p(a, q(b,c)), q(p(a,b), p(a,c)))
