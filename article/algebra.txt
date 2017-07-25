@@ -1,0 +1,97 @@
+Prove the distributive law.
+
+a `p` (b `q` c) = (a `p` b) `q` (a `p` c)
+Which is
+p(a, q(b,c)) = q(p(a,b), p(a,c))
+
+Let's begin by standardizing the inner terms.
+Take lexicographical order as rank.
+
+q(b,c) = q(b(0,1), b(c,c)) by case analysis and irrelevance
+       = b(q(0,c), q(1,c)) by swapping
+       = b(q(c(0,0), c(0,1)), q(c(1,1), c(0,1))) by case analysis and irrelevance
+       = b(c(q(0,0), q(0,1)), c(q(1,0), q(1,1))) by swapping
+       = b(c(0, q), c(q(1,0), 1)) by case analysis and irrelevance
+q(b,c) = b(c(0,q), c(~q,1)) by the definition of inversion 
+
+Following the same pattern:
+p(a,b) = a(b(0,p), b(~p,1))
+p(a,c) = a(c(0,p), c(~p,1))
+
+Now the LHS:
+
+p(a, q(b,c)) = p(a, b(c(0,q), c(~q,1))) by substitution
+             = p(a(0,1), a(b(c(0,q), c(~q,1)), b(c(0,q), c(~q, 1)))) by c a & i
+             = a(p(0, b(c(0,q), c(~q,1))), p(1, b(c(0,q), c(~q, 1)))) by swapping
+
+Now we have some inner terms to standardize.
+
+First:
+p(0, b(c(0,q), c(~q,1))) = p(b(0,0), b(c(0,q), c(~q,1))) by c a & i
+                         = b(p(0, c(0,q)), p(0, c(~q, 1))) by swapping
+                         = b(p(c(0,0), c(0,q)), p(c(0,0), c(~q,1))) by c a & i
+                         = b(c(p(0,0), p(0,q)), c(p(0,~q),p(0,1))) by swapping
+                         = b(c(0, p(0,q)), c(p(0,~q), p)) by c a & i
+
+Second:
+p(1, b(c(0,q), c(~q, 1))) = p(b(1,1), b(c(0,q), c(~q,1))) by c a & i
+                          = b(p(1,c(0,q)), p(1,c(~q,1))) by swapping
+                          = b(p(c(1,1), c(0,q)), p(c(1,1), c(~q,1))) by c a & i
+                          = b(c(p(1,0), p(1,q)), c(p(1, ~q), p(1,1))) by swapping
+                          = b(c(~p, p(1,q)), c(p(1,~q), 1)) by c a & i
+LHS all together:
+p(a, q(b,c)) = a( b(c( 0, p(0,q)), c(p(0,~q), p)),
+                  b(c(~p, p(1,q)), c(p(1,~q), 1)))
+
+And the RHS:
+q(p(a,b), p(a,c)) = q(a(b(0,p), b(~p, 1)), a(c(0,p), c(~p, 1))) by substitution
+                   =a(q(b(0,p), c(0,p)), q(b(~p,1), c(~p,1))) by swapping
+
+First RHS term:
+q(b(0,p), c(0,p)) = q(b(0,p), b(c(0,p), c(0,p))) by c a & i
+                  = b(q(0, c(0,p)), q(p, c(0,p))) by swapping
+
+Inner first term
+q(0, c(0,p)) = q(c(0,0), c(0,p)) by c a & i
+             = c(q(0,0), q(0,p)) by swapping
+             = c(0, q(p(0,0), p(0,1))) by c a & i
+             = c(0, p(q(0,0), q(0,1))) by swapping
+             = c(0, p(0, q)) by c a & i
+Inner second term
+q(p, c(0,p)) = q(c(p,p), c(0,p)) by c a & i
+             = c(q(p, 0), q(p,p)) by swapping
+             = c(q(p(0,1), p(0,0)), p) by c a & i
+             = c(p(q(0,0), q(1,0)), p) by swapping
+             = c(p(0, q(1,0)), p) by c a & i
+             = c(p(0, ~q), p) by def of inverse
+First RHS term:
+q(b(0,p), c(0,p)) = b(c(0, p(0,q)), c(p(0,~q), p)) by substitution
+
+Second RHS term:
+q(b(~p,1), c(~p,1)) = q(b(~p, 1), b(c(~p,1), c(~p,1))) by c a & i
+                    = b(q(~p, c(~p, 1)), q(1, c(~p,1))) by swapping
+Inner first term:
+q(~p, c(~p, 1)) = q(c(~p,~p), c(~p, 1)) by c a & i
+                = c(q(~p, ~p), q(~p, 1)) by swapping
+                = c(~p, q(p(1,0), p(1,1))) by c a & i, and def inverse
+                = c(~p, p(q(1,1), q(0,1))) by swapping
+                = c(~p, p(1, q)) by c a & i
+Inner second term:
+q(1, c(~p,1)) = q(c(1,1), c(~p,1)) c a & i
+              = c(q(1,~p), q(1,1)) swapping
+              = c(q(p(1,1), p(1,0)), 1) c a & i, def inverse
+              = c(p(q(1,1), q(1,0)), 1) swapping
+              = c(p(1, ~q), 1) c a & i, def inverse
+Second RHS term:
+q(b(~p,1), c(~p,1)) = b(c(~p, p(1,q)), c(p(1,~q), 1)) by substitution
+
+RHS:
+q(p(a,b), p(a,c)) = a( b(c( 0, p(0,q)), c(p(0,~q), p)),
+                       b(c(~p, p(1,q)), c(p(1,~q), 1)))
+
+Recall the LHS:
+
+p(a, q(b,c)) = a( b(c( 0, p(0,q)), c(p(0,~q), p)),
+                  b(c(~p, p(1,q)), c(p(1,~q), 1)))
+
+These terms are equal.  QED.
