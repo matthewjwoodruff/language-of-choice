@@ -26,8 +26,8 @@ DIG = 10**5
 
 def ids(node):
     try: node.if0
-    except AttributeError: return "{}".format(id(node)%DIG)
-    return "{}({},{})".format(id(node)%DIG, ids(node.if0), ids(node.if1))
+    except AttributeError: return "{}@{}".format(node.name, id(node)%DIG)
+    return "{}@{}({},{})".format(node.name, id(node)%DIG, ids(node.if0), ids(node.if1))
 
 # constant nodes are terminal -- they do not have if0 or if1
 ConstantNode = namedtuple("ConstantNode", (
@@ -48,12 +48,25 @@ ChoiceNode.__repr__ = algebra
 const0 = ConstantNode('0', inf, 0)
 const1 = ConstantNode('1', inf, 1)
 
+choice_nodes = dict()
+
 def variable(name, rank):
-    return ChoiceNode(name, rank, const0, const1)
+    key = (name, rank, const0, const1)
+    try:
+        return choice_nodes[key]
+    except KeyError:
+        node = ChoiceNode(*key)
+        choice_nodes[key] = node
+        return node
 
 def collapse_irrelevant(index, if0, if1):
     if if0 is if1: return if0
-    return ChoiceNode(index.name, index.rank, if0, if1)
+    key = (index.name, index.rank, if0, if1)
+    try: return choice_nodes[key]
+    except KeyError:
+        node = ChoiceNode(*key)
+        choice_nodes[key] = node
+        return node
 
 def substitute(node, rank, value):
     if rank < node.rank: return node
@@ -65,7 +78,12 @@ def substitute(node, rank, value):
     else:
         left = substitute(node.if0, rank, value)
         right = substitute(node.if1, rank, value)
-        return ChoiceNode(node.name, node.rank, left, right)
+        key = (node.name, node.rank, left, right)
+        try: return choice_nodes[key]
+        except KeyError:
+            node = ChoiceNode(key)
+            choice_nodes[key] = node
+            return node
 
 def choice(index, if0, if1):
     try:
@@ -100,9 +118,22 @@ def choice(index, if0, if1):
 
 a = variable('a', 0)
 b = variable('b', 1)
-p = variable('p', 2)
+c = variable('c', 2)
+p = variable('p', 3)
 
 import sys
 cab = choice(p,a,b)
 print(algebra(cab))
 print(ids(cab))
+
+q = variable('q', 4)
+
+dist_left = choice(p, a, choice(q, b, c))
+dist_right = choice(q, choice(p, a, b), choice(p, a, c))
+
+print(algebra(dist_left))
+print(ids(dist_left))
+print(algebra(dist_right))
+print(ids(dist_right))
+
+print(ids(dist_left) == ids(dist_right))
