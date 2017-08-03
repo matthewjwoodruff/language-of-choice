@@ -137,3 +137,26 @@ print(algebra(dist_right))
 print(ids(dist_right))
 
 print(ids(dist_left) == ids(dist_right))
+
+def viz(graph):
+    nodes = [dist_left]
+    dot = graphviz.Digraph('distributive')
+    while len(nodes) > 0:
+        next_nodes = set()
+        for node in nodes:
+            dot.node(str(id(node)), node.name)
+            try:
+                next_nodes.add(node.if0)
+                dot.edge(str(id(node)), str(id(node.if0)), label='0')
+                next_nodes.add(node.if1)
+                dot.edge(str(id(node)), str(id(node.if1)), label='1')
+            except AttributeError: pass
+        nodes = next_nodes
+
+    dot.render('distributive', view=False)
+
+try:
+    import graphviz
+    viz(dist_left)
+except ImportError:
+    pass
