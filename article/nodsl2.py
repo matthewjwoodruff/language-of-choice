@@ -11,21 +11,30 @@ from collections import namedtuple
 import math
 inf = math.inf
 
+def algebra(node):
+    try:                   node.if0
+    except AttributeError: return node.name
+    #try:
+    #    if node.if0.value == 0 and node.if1.value == 1:
+    #        return node.name
+    #    elif node.if1.value == 0 and node.if0.value == 1:
+    #        return "~{}".format(node.name)
+    #except AttributeError: pass
+    return "{}({},{})".format(node.name, algebra(node.if0), algebra(node.if1))
+
+DIG = 10**5
+
+def ids(node):
+    try: node.if0
+    except AttributeError: return "{}".format(id(node)%DIG)
+    return "{}({},{})".format(id(node)%DIG, ids(node.if0), ids(node.if1))
+
 # constant nodes are terminal -- they do not have if0 or if1
 ConstantNode = namedtuple("ConstantNode", (
     'name',
     'rank',
     'value'))
-ConstantNode.__repr__ = lambda n: n.name
-
-def fancy(node):
-    try:
-        if node.if0.value == 0 and node.if1.value == 1:
-            return node.name
-        elif node.if1.value == 0 and node.if0.value == 1:
-            return "~{}".format(node.name)
-    except AttributeError: pass
-    return "{}({},{})".format(node.name, repr(node.if0), repr(node.if1))
+ConstantNode.__repr__ = algebra
 
 # choice nodes do not have a value in the absolute sense,
 # only in the context of an environment
@@ -34,7 +43,7 @@ ChoiceNode = namedtuple("ChoiceNode", (
     'rank',
     'if0',
     'if1' ))
-ChoiceNode.__repr__ = fancy
+ChoiceNode.__repr__ = algebra
 
 const0 = ConstantNode('0', inf, 0)
 const1 = ConstantNode('1', inf, 1)
@@ -60,8 +69,13 @@ def substitute(node, rank, value):
 
 def choice(index, if0, if1):
     try:
-        if if0.value == 0 and if1.value == 1:
-            return index
+        if if0.value == 0:
+            if if1.value == 0:
+                return const0
+            elif if1.value == 1:
+                return index
+        elif if0.value == 1 and if1.value == 1:
+            return const1
     except AttributeError: pass
     try:
         if index.value == 0: return if0
@@ -89,4 +103,6 @@ b = variable('b', 1)
 p = variable('p', 2)
 
 import sys
-print(choice(p,a,b))
+cab = choice(p,a,b)
+print(algebra(cab))
+print(ids(cab))
