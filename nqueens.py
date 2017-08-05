@@ -3,6 +3,9 @@ The N-queens problem as a BDD.
 """
 
 import dd
+from functools import reduce
+import sys
+import time
 
 ## queens(2)
 #. none
@@ -13,17 +16,21 @@ import dd
 #. . Q . .
 
 def queens(n):
-    env = dd.satisfy(queens_problem(n), 1)
+    before = time.time()
+    problem = queens_problem(n)
+    print(len(dd.build_node._memos))
+    print("made bdd in {}s".format(time.time() - before))
+    env = dd.satisfy(problem, 1)
     if env is None:
-        print 'none'
+        print( 'none')
     else:
         show_board(n, env)
 
 def show_board(n, env):
     for row in make_board(n):
         for var in row:
-            print '.Q'[env[var]],
-        print
+            sys.stdout.write('.Q'[env[var]])
+        sys.stdout.write('\n')
 
 def queens_problem(n):
     return conjoin(disjoin(place_queen(n, r, c) for c in range(n))
