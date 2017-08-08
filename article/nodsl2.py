@@ -254,3 +254,10 @@ try:
     print("abcdefghi")
 except ImportError:
     pass
+
+# A Possibly More Realistic Example?
+# Let's say we want to do a round-robin tournament among
+# N teams across M days.  Each team may play at most once
+# in a day.
+choice_nodes.clear()
+
