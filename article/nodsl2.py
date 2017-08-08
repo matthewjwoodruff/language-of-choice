@@ -160,3 +160,97 @@ try:
     viz(dist_left)
 except ImportError:
     pass
+
+# scheduling-like constraints
+# exactly one of a,b,c,d,e
+# exactly one of a,f,g,h,i
+
+choice_nodes.clear()
+a = variable('a', 0)
+b = variable('b', 1)
+c = variable('c', 2)
+d = variable('d', 3)
+e = variable('e', 4)
+f = variable('f', 5)
+g = variable('g', 6)
+h = variable('h', 7)
+i = variable('i', 8)
+
+# exactly one of a,b,c,d,e
+abcde = choice(a,
+               choice(b,
+                      choice(c,
+                             choice(d,
+                                    e,
+                                    choice(e,const1,const0)),
+                             choice(d,
+                                    choice(e,const1,const0),
+                                    const0)
+                      ),
+                      choice(c,
+                             choice(d,
+                                    choice(e,const1,const0),
+                                    const0),
+                             const0
+                      )
+               ),
+               choice(b,
+                      choice(c,
+                             choice(d,
+                                    choice(e,const1,const0),
+                                    const0),
+                             const0),
+                      const0)
+               )
+# exactly one of a,f,g,h,i
+afghi = choice(a,
+               choice(f,
+                      choice(g,
+                             choice(h,
+                                    i,
+                                    choice(i,const1,const0)),
+                             choice(h,
+                                    choice(i,const1,const0),
+                                    const0)
+                      ),
+                      choice(g,
+                             choice(h,
+                                    choice(i,const1,const0),
+                                    const0),
+                             const0
+                      )
+               ),
+               choice(f,
+                      choice(g,
+                             choice(h,
+                                    choice(i,const1,const0),
+                                    const0),
+                             const0),
+                      const0)
+               )
+# the two together
+
+abcdefghi = choice(abcde, const0, afghi)
+
+def viz2(graph):
+    nodes = [abcdefghi]
+    dot = graphviz.Digraph('abcdefghi')
+    while len(nodes) > 0:
+        next_nodes = set()
+        for node in nodes:
+            dot.node(str(id(node)), node.name)
+            try:
+                next_nodes.add(node.if0)
+                dot.edge(str(id(node)), str(id(node.if0)), label='0')
+                next_nodes.add(node.if1)
+                dot.edge(str(id(node)), str(id(node.if1)), label='1')
+            except AttributeError: pass
+        nodes = next_nodes
+
+    dot.render('abcdefghi', view=False)
+try:
+    import graphviz
+    viz2(abcdefghi)
+    print("abcdefghi")
+except ImportError:
+    pass
