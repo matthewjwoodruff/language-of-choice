@@ -232,6 +232,8 @@ afghi = choice(a,
 
 abcdefghi = choice(abcde, const0, afghi)
 
+import random
+
 def viz2(graph):
     nodes = [abcdefghi]
     dot = graphviz.Digraph('abcdefghi')
@@ -240,10 +242,29 @@ def viz2(graph):
         for node in nodes:
             dot.node(str(id(node)), node.name)
             try:
-                next_nodes.add(node.if0)
-                dot.edge(str(id(node)), str(id(node.if0)), label='0')
-                next_nodes.add(node.if1)
-                dot.edge(str(id(node)), str(id(node.if1)), label='1')
+                if node.if0 is const0:
+                    zero = str(random.random())
+                    dot.node(zero, "0")
+                    dot.edge(str(id(node)), zero, label='0')
+                elif node.if0 is const1:
+                    one = str(random.random())
+                    dot.node(one, "1")
+                    dot.edge(str(id(node)), one, label='0')
+                else:
+                    dot.edge(str(id(node)), str(id(node.if0)), label='0')
+                    next_nodes.add(node.if0)
+
+                if node.if1 is const0:
+                    zero = str(random.random())
+                    dot.node(zero, "0")
+                    dot.edge(str(id(node)), zero, label='1')
+                elif node.if1 is const1:
+                    one = str(random.random())
+                    dot.node(one, "1")
+                    dot.edge(str(id(node)), one, label='1')
+                else:
+                    dot.edge(str(id(node)), str(id(node.if1)), label='1')
+                    next_nodes.add(node.if1)
             except AttributeError: pass
         nodes = next_nodes
 
