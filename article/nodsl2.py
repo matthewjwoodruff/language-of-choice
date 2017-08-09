@@ -282,3 +282,72 @@ except ImportError:
 # in a day.
 choice_nodes.clear()
 
+N = 4
+M = 4
+
+variables = list()
+rank = 0
+for ww in range(M):
+    for ii in range(N):
+        for jj in range(ii+1,N):
+            name = "{}{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj), ww)
+            variables.append(variable(name, rank))
+            rank += 1
+        name = "{}B{}".format(chr(ord('a')+ii), ww)
+        variables.append(variable(name, rank))
+        rank += 1
+
+print([(v.name, v.rank) for v in variables])
+
+constraints = list()
+
+def exactly_one(vars):
+    stack = list() # (variable, left, right)
+    state = 0
+    index = 0
+    current = [vars[index], None, None]
+    stack.append(current)
+    index += 1
+    while index > 0:
+        if current[1] is None:
+            if index == len(vars) - 1:
+                if state == 0:
+                    current[1] = const0
+                else:
+                    current[1] = const1
+            else:
+                current = [vars[index], None, None]
+                stack.append(current)
+                index += 1
+        elif current[2] is None:
+            state += 1
+            if index == len(vars) - 1:
+                if state == 0:
+                    current[2] = const1
+                else:
+                    current[2] = const0
+            else:
+                if state > 1:
+                    current[2] = const0
+                else:
+                    current = [vars[index], None, None]
+                    stack.append(current)
+                    index += 1
+        else:
+            state -= 1
+            new_node = choice(*current)
+            stack.pop()
+            current = stack[-1]
+            index -= 1
+    return stack[-1]
+
+print(exactly_one(variables[:3]))
+  
+# each team does one thing each week
+#for ii in range(N):
+#    for ww in range(M):
+#        team = chr(ord('a')+ii)
+#        components = [v for v in variables if team in v and str(ww) in v]
+#        constraint = exactly_one(components)
+
+# each game played exactly once
