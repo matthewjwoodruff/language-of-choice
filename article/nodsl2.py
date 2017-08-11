@@ -312,6 +312,53 @@ def at_least_one(vars):
 
     return constraint
 
+print(at_least_one(variables[:3]))
+
+# True: that's what we're looking at now
+# False: that's not what we're looking at now
+# Choice: already filled in
+def at_least_two(vars):
+    if len(vars) < 2: return const0
+    stack = list()
+    count = 0
+    # stack of incomplete choice arguments
+    stack.append((True, False))
+    while stack[0][1] in (True, False):
+        if len(vars) - len(stack) < 2 - count:
+            left = const0
+            if count >= 1:
+                right = const1
+            else:
+                right = True
+        else:
+            left = True
+            right = False
+        if left is True or right is True:
+            stack.append(
+
+
+
+        if stack[-1][0] is True:
+
+
+
+            if len(stack) + 1 >= len(vars):
+                # terminal: last variable decides
+                variable = vars[len(stack)]
+
+
+            stack.append((True, False))
+
+
+
+
+
+    if count >= 1:
+        right = 1
+        left 
+
+
+
 '''
 def at_least_two(vars):
     if len(vars) == 0: return const0
