@@ -301,48 +301,103 @@ print([(v.name, v.rank) for v in variables])
 
 constraints = list()
 
-def exactly_one(vars):
-    stack = list() # (variable, left, right)
-    state = 0
-    index = 0
-    current = [vars[index], None, None]
-    stack.append(current)
-    index += 1
-    while index > 0:
-        if current[1] is None:
-            if index == len(vars) - 1:
-                if state == 0:
-                    current[1] = const0
-                else:
-                    current[1] = const1
-            else:
-                current = [vars[index], None, None]
-                stack.append(current)
-                index += 1
-        elif current[2] is None:
-            state += 1
-            if index == len(vars) - 1:
-                if state == 0:
-                    current[2] = const1
-                else:
-                    current[2] = const0
-            else:
-                if state > 1:
-                    current[2] = const0
-                else:
-                    current = [vars[index], None, None]
-                    stack.append(current)
-                    index += 1
-        else:
-            state -= 1
-            new_node = choice(*current)
-            stack.pop()
-            current = stack[-1]
-            index -= 1
-    return stack[-1]
+def at_least_one(vars):
+    # early return for trivial failure
+    if len(vars) == 0: return const0
 
-print(exactly_one(variables[:3]))
-  
+    # if only one variable, success on right branch, failure on the left
+    constraint = vars.pop()
+    while len(vars) > 0:
+        constraint = choice(vars.pop(), constraint, const1)
+
+    return constraint
+
+'''
+def at_least_two(vars):
+    if len(vars) == 0: return const0
+    count = 0
+    index = 0
+    stack = list() # left, right
+    leaf = const1
+    while True:
+        if index < 0: break
+        variable = vars[index]
+        if index >= len(stack):
+            stack.append(tuple())
+            if index + 1 == len(vars):
+                # terminal
+                if count == 0:
+                    stack[index] = (const0, const0)
+                elif count == 1:
+                    stack[index] = (const0, const1)
+                else:
+                    stack[index] = (const1, const1)
+            else:
+                stack[index] =
+
+        else:
+            if len(stack[index]) == 2:
+                left, right = *stack.pop()
+                leaf = choice(vars[index], left, right)
+            elif len(stack[index]) == 1:
+                left, = *stack.pop()
+                stack.append((left, leaf))
+            elif len(stack[index]) == 0:
+                stack[index] = (leaf,)
+                index += 1
+'''
+
+#
+#
+#
+#
+
+
+
+
+
+#def exactly_one(vars):
+#    stack = list() # (variable, left, right)
+#    state = 0
+#    index = 0
+#    current = [vars[index], None, None]
+#    stack.append(current)
+#    index += 1
+#    while index > 0:
+#        if current[1] is None:
+#            if index == len(vars) - 1:
+#                if state == 0:
+#                    current[1] = const0
+#                else:
+#                    current[1] = const1
+#            else:
+#                current = [vars[index], None, None]
+#                stack.append(current)
+#                index += 1
+#        elif current[2] is None:
+#            state += 1
+#            if index == len(vars) - 1:
+#                if state == 0:
+#                    current[2] = const1
+#                else:
+#                    current[2] = const0
+#            else:
+#                if state > 1:
+#                    current[2] = const0
+#                else:
+#                    current = [vars[index], None, None]
+#                    stack.append(current)
+#                    index += 1
+#        else:
+#            state -= 1
+#            new_node = choice(*current)
+#            stack.pop()
+#            current = stack[-1]
+#            index -= 1
+#    return stack[-1]
+#
+#print(exactly_one(variables[:3]))
+#  
 # each team does one thing each week
 #for ii in range(N):
 #    for ww in range(M):
