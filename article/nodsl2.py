@@ -330,6 +330,7 @@ def at_least_n(limit, vars):
             right = constraint[ii+1]
             if left is not right:
                 constraint[ii] = choice(variable, left, right)
+    return constraint[0]
 
 def at_most_n(limit, vars):
     nvars = len(vars)
@@ -348,9 +349,10 @@ def at_most_n(limit, vars):
             right = constraint[ii+1]
             if left is not right:
                 constraint[ii] = choice(variable, left, right)
-
+    return constraint[0]
 am = at_most_n(1, variables[:2])
 al = at_least_n(1, variables[:2])
+print(am, al)
 print(choice(am, const0, al))
 
 
