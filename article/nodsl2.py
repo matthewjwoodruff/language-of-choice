@@ -534,7 +534,7 @@ def make_problem(teams, days):
     return variables
 
 N = 6
-M = 5
+M = 6
 variables = make_problem(N, M)
 
 all_components = list()
