@@ -283,21 +283,19 @@ except ImportError:
 choice_nodes.clear()
 
 N = 4
-M = 4
+M = 3
 
 variables = list()
 rank = 0
-for ww in range(M):
+for dd in range(M):
     for ii in range(N):
         for jj in range(ii+1,N):
-            name = "{}{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj), ww)
+            name = "{}{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj), dd)
             variables.append(variable(name, rank))
             rank += 1
-        name = "{}B{}".format(chr(ord('a')+ii), ww)
+        name = "{}B{}".format(chr(ord('a')+ii), dd)
         variables.append(variable(name, rank))
         rank += 1
-
-print([(v.name, v.rank) for v in variables])
 
 constraints = list()
 
@@ -318,6 +316,7 @@ def at_least_n(limit, vars):
     if nvars < limit: return const0
     # trivial success
     if limit <= 0: return const1
+    vars = sorted(vars, key=lambda v: v.rank)
     constraint = [const0 for _ in range(limit)]
     constraint.append(const1)
 
@@ -338,7 +337,8 @@ def at_most_n(limit, vars):
     if limit < 0: return const0
     # trivial success
     if limit > nvars: return const1
-    constraint = [const1 for _ in range(limit)]
+    vars = sorted(vars, key=lambda v: v.rank)
+    constraint = [const1 for _ in range(limit + 1)]
     constraint.append(const0)
     index = nvars - 1
     while index >= 0:
@@ -350,20 +350,215 @@ def at_most_n(limit, vars):
             if left is not right:
                 constraint[ii] = choice(variable, left, right)
     return constraint[0]
-am = at_most_n(1, variables[:2])
-al = at_least_n(1, variables[:2])
+am = at_most_n(3, variables[:8])
+al = at_least_n(3, variables[:8])
 print(am, al)
 print(choice(am, const0, al))
 
 
-#
-#print(exactly_one(variables[:3]))
-#  
-# each team does one thing each week
-#for ii in range(N):
-#    for ww in range(M):
-#        team = chr(ord('a')+ii)
-#        components = [v for v in variables if team in v and str(ww) in v]
-#        constraint = exactly_one(components)
 
-# each game played exactly once
+def viz3(graph, name):
+    nodes = [graph]
+    dot = graphviz.Digraph(name)
+    while len(nodes) > 0:
+        next_nodes = set()
+        for node in nodes:
+            dot.node(str(id(node)), node.name)
+            try:
+                if node.if0 is const0:
+                    zero = str(random.random())
+                    dot.node(zero, "0")
+                    dot.edge(str(id(node)), zero, label='0')
+                elif node.if0 is const1:
+                    one = str(random.random())
+                    dot.node(one, "1")
+                    dot.edge(str(id(node)), one, label='0')
+                else:
+                    dot.edge(str(id(node)), str(id(node.if0)), label='0')
+                    next_nodes.add(node.if0)
+
+                if node.if1 is const0:
+                    zero = str(random.random())
+                    dot.node(zero, "0")
+                    dot.edge(str(id(node)), zero, label='1')
+                elif node.if1 is const1:
+                    one = str(random.random())
+                    dot.node(one, "1")
+                    dot.edge(str(id(node)), one, label='1')
+                else:
+                    dot.edge(str(id(node)), str(id(node.if1)), label='1')
+                    next_nodes.add(node.if1)
+            except AttributeError: pass
+        nodes = next_nodes
+
+    dot.render(name, view=False)
+    print(name)
+try:
+    import graphviz
+    viz3(choice(am, const0, al), "exactly_3_of_8")
+except ImportError:
+    pass
+
+constraint = const1
+
+for ii in range(N):
+    for dd in range(M):
+        print("team {} day {} nodes {}".format(ii, dd, len(choice_nodes)))
+        team = str(chr(ord('a')+ii))
+        components = [v for v in variables if team in v.name and str(dd) in v.name]
+        only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+        constraint = choice(constraint, const0, only_one)
+
+no_double_booking = constraint
+try:
+    import graphviz
+    name = "no_double_booking"
+    viz3(no_double_booking, name)
+except ImportError: pass
+
+constraint = const1
+# Games happen exactly once
+for ii in range(N):
+    for jj in range(ii+1,N):
+        match = "{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj))
+        print("match {} nodes {}".format(match, len(choice_nodes)))
+        components = [v for v in variables if match in v.name]
+        only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+        constraint = choice(constraint, const0, only_one)
+
+play_exactly_once = constraint
+
+try:
+    import graphviz
+    name = "play_exactly_once"
+    viz3(play_exactly_once, name)
+except ImportError: pass
+
+both_constraints = choice(no_double_booking, const0, play_exactly_once)
+try:
+    import graphviz
+    name = "both_constraints"
+    viz3(both_constraints, name)
+except ImportError: pass
+
+print(both_constraints)
+
+# The really interesting thing is that we can generate a
+# BDD that has all of the feasible solutions built into it.
+# And we can prove the feasibility of the problem -- indeed
+# the fact that the BDD doesn't collapse to const0 shows
+# that it's feasible.  Furthermore, we can generate feasible
+# solutions just by walking the graph.  We only backtrack if
+# we want to generate another feasible solution, because we
+# never descend into an infeasible branch, because there's no
+# such thing.  Infeasible branches collapse to const0.
+
+# The bad news is performance.  Unless we can keep the
+# constraints really tight, the graph blows up.
+
+
+choice_nodes.clear()
+
+N = 5
+M = 3
+
+variables = list()
+rank = 0
+for dd in range(M):
+    for ii in range(N):
+        for jj in range(ii+1,N):
+            name = "{}{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj), dd)
+            variables.append(variable(name, rank))
+            rank += 1
+        name = "{}B{}".format(chr(ord('a')+ii), dd)
+        variables.append(variable(name, rank))
+
+constraint = const1
+
+class Zeero(Exception): pass
+
+try:
+    for ii in range(N):
+        for dd in range(M):
+            team = str(chr(ord('a')+ii))
+            print("team {} day {} nodes {}".format(team, dd, len(choice_nodes)))
+            components = [v for v in variables if team in v.name and str(dd) in v.name]
+            only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+            new_constraint = choice(constraint, const0, only_one)
+            if new_constraint is const0:
+                raise Zeero
+            else:
+                constraint = new_constraint
+
+        for jj in range(ii+1,N):
+            match = "{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj))
+            print("match {} nodes {}".format(match, len(choice_nodes)))
+            components = [v for v in variables if team in v.name and str(dd) in v.name]
+            only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+            new_constraint = choice(constraint, const0, only_one)
+            if new_constraint is const0:
+                raise Zeero
+            else:
+                constraint = new_constraint
+except Zeero:
+    print("FAILED")
+    try:
+        import graphviz
+        name = "both_constraints_{}_{}".format(M, N)
+        viz3(only_one, "only_one")
+    except ImportError: pass
+
+try:
+    import graphviz
+    name = "both_constraints_{}_{}".format(M, N)
+    viz3(constraint, name)
+except ImportError: pass
+
+
+# Combining the loops helps because of the overlapping
+# variables.  But I think we can do better.
+
+choice_nodes.clear()
+
+def make_problem(teams, days):
+    variables = list()
+    rank = 0
+    for dd in range(M):
+        for ii in range(N):
+            for jj in range(ii+1,N):
+                name = "{}{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj), dd)
+                variables.append(variable(name, rank))
+                rank += 1
+            name = "{}B{}".format(chr(ord('a')+ii), dd)
+            variables.append(variable(name, rank))
+    return variables
+
+N = 6
+M = 5
+variables = make_problem(N, M)
+
+all_components = list()
+for ii in range(N):
+    for dd in range(M):
+        team = str(chr(ord('a')+ii))
+        components = [v for v in variables if team in v.name and str(dd) in v.name]
+        all_components.append(components)
+
+    for jj in range(ii+1,N):
+        match = "{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj))
+        components = [v for v in variables if team in v.name and str(dd) in v.name]
+        all_components.append(components)
+
+all_components.sort(key=lambda c: c[0].rank, reverse=True)
+constraint = const1
+for components in all_components:
+    only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+    constraint = choice(constraint, const0, only_one)
+try:
+    import graphviz
+    name = "both_constraints_{}_{}".format(M, N)
+    viz3(constraint, name)
+except ImportError: pass
+
+# Oh heck yes.  That's blazingly faster.  Moral of the
+# story: build the tree in a way that helps standardize it.
