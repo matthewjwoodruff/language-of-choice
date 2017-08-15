@@ -103,12 +103,6 @@ def choice(index, if0, if1):
 
 import random
 
-# A Possibly More Realistic Example?
-# Let's say we want to do a round-robin tournament among
-# N teams across M days.  Each team may play at most once
-# in a day.
-choice_nodes.clear()
-
 def at_least_n(limit, vars):
     nvars = len(vars)
     # trivial failure
@@ -156,7 +150,7 @@ def viz(graph, name):
     while len(nodes) > 0:
         next_nodes = set()
         for node in nodes:
-            dot.node(str(id(node)), node.name)
+            dot.node(str(id(node)), "{}.{}".format(node.name, node.rank))
             try:
                 if node.if0 is const0:
                     zero = str(random.random())
@@ -187,17 +181,20 @@ def viz(graph, name):
     dot.render(name, view=False)
     print(name)
 
+# A Possibly More Realistic Example?
+# Let's say we want to do a round-robin tournament among
+# N teams across M days.  Each team may play at most once
+# in a day.
+
 # Combining the loops helps because of the overlapping
 # variables.  But I think we can do better.
 
-choice_nodes.clear()
-
-def make_problem(teams, days):
+def make_variables(teams, days):
     variables = list()
     rank = 0
-    for dd in range(M):
-        for ii in range(N):
-            for jj in range(ii+1,N):
+    for dd in range(days):
+        for ii in range(teams):
+            for jj in range(ii+1,teams):
                 name = "{}{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj), dd)
                 variables.append(variable(name, rank))
                 rank += 1
@@ -205,33 +202,42 @@ def make_problem(teams, days):
             variables.append(variable(name, rank))
     return variables
 
-N = 6
-M = 5 # can also do 6, but as the graph relaxes to a tree things take longer
-variables = make_problem(N, M)
+def make_constraint_graph(teams, days, variables):
+    all_components = list()
+    for tt in range(teams):
+        for dd in range(days):
+            team = str(chr(ord('a')+tt))
+            components = [v for v in variables if team in v.name and str(dd) in v.name]
+            print("(tt, dd) ({}, {}): {}".format(tt, dd, components))
+            all_components.append(components)
 
-all_components = list()
-for ii in range(N):
-    for dd in range(M):
-        team = str(chr(ord('a')+ii))
-        components = [v for v in variables if team in v.name and str(dd) in v.name]
-        all_components.append(components)
+        for uu in range(tt+1,teams):
+            match = "{}{}".format(chr(ord('a')+tt), chr(ord('a')+uu))
+            components = [v for v in variables if match in v.name]
+            print("(tt, uu) ({}, {}): {}".format(tt, uu, components))
+            all_components.append(components)
 
-    for jj in range(ii+1,N):
-        match = "{}{}".format(chr(ord('a')+ii), chr(ord('a')+jj))
-        components = [v for v in variables if team in v.name and str(dd) in v.name]
-        all_components.append(components)
+    all_components.sort(key=lambda c: c[0].rank, reverse=True)
+    constraint = const1
+    for components in all_components:
+        only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+        print("constraint   {}".format(constraint))
+        print("only one     {}".format(only_one))
+        constraint = choice(constraint, const0, only_one)
+    return constraint
 
-all_components.sort(key=lambda c: c[0].rank, reverse=True)
-constraint = const1
-for components in all_components:
-    only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
-    constraint = choice(constraint, const0, only_one)
+choice_nodes.clear()
+
+teams = 2
+days = 3
+variables = make_variables(teams, days)
+print("variables {}".format(variables))
+constraint_graph = make_constraint_graph(teams, days, variables)
+print("constraint graph {}".format(constraint_graph))
+
 try:
     import graphviz
-    name = "both_constraints_{}_{}".format(M, N)
-    viz3(constraint, name)
+    name = "both_constraints_{}_{}".format(teams, days)
+    viz(constraint_graph, name)
 except ImportError: pass
-
-# Oh heck yes.  That's blazingly faster.  Moral of the
-# story: build the graph in a way that helps standardize it.
 
