@@ -534,7 +534,7 @@ def make_problem(teams, days):
     return variables
 
 N = 6
-M = 6
+M = 5 # can also do 6, but as the graph relaxes to a tree things take longer
 variables = make_problem(N, M)
 
 all_components = list()
@@ -565,6 +565,64 @@ except ImportError: pass
 
 exit()
 
+def left_standardize(index, if0):
+    """ placeholder """
+    return const0
+
+Ancestry = namedtuple("Ancestry", (
+    "parent", # ChoiceNode
+    "side"    # 0 or 1
+))
+
+def reverse_bdd(graph):
+    nodes = [graph]
+    parentage = dict()
+    while len(nodes) > 0:
+        for node in nodes:
+            if node.if0 not in (const0, const1):
+                try:             parents = parentage[node.if0]
+                except KeyError: parents = list()
+                parents.append(Ancestry(node, 0))
+                parentage[node.if0] = parents
+
+            if node.if1 not in (const0, const1):
+                try:             parents = parentage[node.if1]
+                except KeyError: parents = list()
+                parents.append(Ancestry(node, 1))
+                parentage[node.if1] = parents
+    return parentage
+
+def right_standardize(index, if1):
+    # reverse both BDDs so we can merge them
+    index_parentage = reverse_bdd(index)
+    if1_parentage = reverse_bdd(if1)
+
+
+
+
+def iteratively_standardize(index, if0, if1):
+    try:
+        return choice_nodes[(index.name, index.rank, if0, if1)]
+    except KeyError: pass
+    if if0 is const0 and if1 is const1: return index
+    if if0 is if1: return if0
+
+
+    left = left_standardize(index, if0)
+    right = right_standardize(index, if1)
+
+    root = index
+    if if0.rank < root.rank:
+        root = if0
+    if if1.rank < root.rank:
+        root = if1
+
+    key = (root.name, root.rank, left, right)
+    standardized = ChoiceNode(*key)
+    choice_nodes[key] = standardized
+    return standardized
+
+'''
 def shuffle(index_graph, selected_graph, exit_):
     """ exit_ is const0 or const1 """
     # so if the exit_ is const0, then the resulting graph
@@ -590,4 +648,4 @@ def iteratively_standardize(index, graph_a, graph_b):
     # build right graph
     right = shuffle(index, graph_b, const1)
     # assemble full graph
-
+'''
