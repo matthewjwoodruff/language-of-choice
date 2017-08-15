@@ -561,4 +561,33 @@ try:
 except ImportError: pass
 
 # Oh heck yes.  That's blazingly faster.  Moral of the
-# story: build the tree in a way that helps standardize it.
+# story: build the graph in a way that helps standardize it.
+
+exit()
+
+def shuffle(index_graph, selected_graph, exit_):
+    """ exit_ is const0 or const1 """
+    # so if the exit_ is const0, then the resulting graph
+    # will just have the const0 exit_s from index_graph.
+    if index_graph is exit_: return selected_graph
+    if index_graph in (const0, const1): return const0 # not informative
+    if selected_graph is exit_: return index_graph
+
+    igrank = index_graph.rank
+    sgrank = selected_graph.rank
+    levels = list()
+    if igrank < sgrank:
+        levels.append([variable(index_graph.name, igrank)])
+
+    # for blah blah in levels[-1] do stuff
+
+
+
+
+def iteratively_standardize(index, graph_a, graph_b):
+    # build left graph
+    left = shuffle(index, graph_a, const0)
+    # build right graph
+    right = shuffle(index, graph_b, const1)
+    # assemble full graph
+
