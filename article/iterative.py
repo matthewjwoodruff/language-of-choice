@@ -1,5 +1,17 @@
 from collections import namedtuple
 import math
+import random
+try:
+    import graphviz
+except ImportError:
+    class graphviz(object): pass
+    class _dummy(object):
+        def node(*args, **kwargs): pass
+        def edge(*args, **kwargs): pass
+        def render(*args, **kwargs): pass
+    def _Digraph(_): return _dummy()
+    graphviz.Digraph = _Digraph
+
 inf = math.inf
 
 def algebra(node):
@@ -100,8 +112,6 @@ def choice(index, if0, if1):
     new_node = collapse_irrelevant(new_index, left, right)
 
     return new_node
-
-import random
 
 def at_least_n(limit, vars):
     nvars = len(vars)
@@ -235,9 +245,6 @@ print("variables {}".format(variables))
 constraint_graph = make_constraint_graph(teams, days, variables)
 print("constraint graph {}".format(constraint_graph))
 
-try:
-    import graphviz
-    name = "both_constraints_{}_{}".format(teams, days)
-    viz(constraint_graph, name)
-except ImportError: pass
+name = "both_constraints_{}_{}".format(teams, days)
+viz(constraint_graph, name)
 
