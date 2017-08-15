@@ -213,27 +213,27 @@ def make_constraint_graph(teams, days, variables):
         for dd in range(days):
             team = str(chr(ord('a')+tt))
             components = [v for v in variables if team in v.name and str(dd) in v.name]
-            print("(tt, dd) ({}, {}): {}".format(tt, dd, components))
+            #print("(tt, dd) ({}, {}): {}".format(tt, dd, components))
             all_components.append(components)
 
         for uu in range(tt+1,teams):
             match = "{}{}".format(chr(ord('a')+tt), chr(ord('a')+uu))
             components = [v for v in variables if match in v.name]
-            print("(tt, uu) ({}, {}): {}".format(tt, uu, components))
+            #print("(tt, uu) ({}, {}): {}".format(tt, uu, components))
             all_components.append(components)
 
     all_components.sort(key=lambda c: c[0].rank, reverse=True)
     constraint = const1
     for components in all_components:
         only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
-        print("constraint   {}".format(constraint))
-        print("only one     {}".format(only_one))
+        #print("constraint   {}".format(constraint))
+        #print("only one     {}".format(only_one))
         constraint = choice(constraint, const0, only_one)
     return constraint
 
 choice_nodes.clear()
 
-teams = 2
+teams = 3
 days = 3
 variables = make_variables(teams, days)
 print("variables {}".format(variables))
