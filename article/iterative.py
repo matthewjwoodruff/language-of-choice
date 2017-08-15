@@ -9,7 +9,7 @@ inf = math.inf
 def algebra(node):
     try:                   node.if0
     except AttributeError: return node.name
-    return "{}({},{})".format(node.name, algebra(node.if0), algebra(node.if1))
+    return "{}.{}({},{})".format(node.name, node.rank, algebra(node.if0), algebra(node.if1))
 
 DIG = 10**5
 
@@ -204,6 +204,7 @@ def make_variables(teams, days):
                 rank += 1
             name = "{}B{}".format(chr(ord('a')+ii), dd)
             variables.append(variable(name, rank))
+            rank += 1
     return variables
 
 def make_constraint_graph(teams, days, variables):
