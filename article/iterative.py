@@ -1,16 +1,8 @@
 from collections import namedtuple
 import math
 import random
-try:
-    import graphviz
-except ImportError:
-    class graphviz(object): pass
-    class _dummy(object):
-        def node(*args, **kwargs): pass
-        def edge(*args, **kwargs): pass
-        def render(*args, **kwargs): pass
-    def _Digraph(_): return _dummy()
-    graphviz.Digraph = _Digraph
+try: import graphviz
+except ImportError: pass
 
 inf = math.inf
 
@@ -156,7 +148,9 @@ def at_most_n(limit, vars):
 
 def viz(graph, name):
     nodes = [graph]
-    dot = graphviz.Digraph(name)
+    try:
+        dot = graphviz.Digraph(name)
+    except NameError: return
     while len(nodes) > 0:
         next_nodes = set()
         for node in nodes:
