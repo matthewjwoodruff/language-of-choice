@@ -256,13 +256,49 @@ def make_constraint_graph(teams, days, variables):
         pass
     return constraint
 
+def make_constraint_graph_binary(teams, days, variables):
+    constraints = list()
+    for tt in range(teams):
+        for dd in range(days):
+            team = str(chr(ord('a')+tt))
+
+            components = sorted([v for v in variables if team in v.name and str(dd) in v.name], key=lambda v: v.rank)
+            only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+            constraints.append(only_one)
+
+        for uu in range(tt+1,teams):
+            match = "{}{}".format(chr(ord('a')+tt), chr(ord('a')+uu))
+            components = sorted([v for v in variables if match in v.name], key=lambda v: v.rank)
+            only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+            constraints.append(only_one)
+
+    #if len(constraints) == 0:
+    #    return const1
+    #if len(constraints) == 1:
+    #    return constraints[0]
+    ## go down to the nearest power of 2 first because extra 
+    #pp = 0
+    #while 2**(pp+1) < len(constraints): pp += 1
+#
+    #while len(constraints) > 2**pp:
+
+    while len(constraints) > 1:
+        print("{}: {}".format(len(constraints), len(choice_nodes)))
+        merged = [choice(constraints[2*i], const0, constraints[2*i+1]) for i in range(len(constraints) // 2)]
+        if 2 * len(merged) < len(constraints): # len(constraints) is odd
+            merged[-1] = choice(merged[-1], const0, constraints[-1])
+            #merged = [choice(c, const0, constraints[-1]) for c in merged] # this takes the odd one into all
+            #merged.insert(0, constraints[-1]) # this rotates the oddness
+        constraints = merged
+    return constraints[0]
+
 choice_nodes.clear()
 
 teams = 6
 days = 5
 variables = make_variables(teams, days)
 print("{} variables: {}".format(len(variables), variables))
-constraint_graph = make_constraint_graph(teams, days, variables)
+constraint_graph = make_constraint_graph_binary(teams, days, variables)
 cgtext = repr(constraint_graph)
 print("constraint graph {}".format(len(cgtext)))
 name = "both_constraints_{}_{}".format(teams, days)
@@ -429,4 +465,67 @@ And here's if I order by overlap with current variables:
 Odd that it's exactly the same...
 
 But is it my imagination or did this version go faster?
+
+Here's a possibly even faster way:
+
+$ python iterative.py
+75 variables: [ab0(0,1), ac0(0,1), ad0(0,1), ae0(0,1), aB0(0,1), bc0(0,1), bd0(0,1), be0(0,1), bB0(0,1), cd0(0,1), ce0(0,1), cB0(0,1), de0(0,1), dB0(0,1), eB0(0,1), ab1(0,1), ac1(0,1), ad1(0,1), ae1(0,1), aB1(0,1), bc1(0,1), bd1(0,1), be1(0,1), bB1(0,1), cd1(0,1), ce1(0,1), cB1(0,1), de1(0,1), dB1(0,1), eB1(0,1), ab2(0,1), ac2(0,1), ad2(0,1), ae2(0,1), aB2(0,1), bc2(0,1), bd2(0,1), be2(0,1), bB2(0,1), cd2(0,1), ce2(0,1), cB2(0,1), de2(0,1), dB2(0,1), eB2(0,1), ab3(0,1), ac3(0,1), ad3(0,1), ae3(0,1), aB3(0,1), bc3(0,1), bd3(0,1), be3(0,1), bB3(0,1), cd3(0,1), ce3(0,1), cB3(0,1), de3(0,1), dB3(0,1), eB3(0,1), ab4(0,1), ac4(0,1), ad4(0,1), ae4(0,1), aB4(0,1), bc4(0,1), bd4(0,1), be4(0,1), bB4(0,1), cd4(0,1), ce4(0,1), cB4(0,1), de4(0,1), dB4(0,1), eB4(0,1)]
+35: 670
+18: 913
+9: 1420
+5: 2647
+3: 6668
+2: 8313
+constraint graph 189890
+5078 nodes in both_constraints_5_5
+
+Or if I merge the extra constraint into the every other constraint:
+
+python iterative.py
+75 variables: [ab0(0,1), ac0(0,1), ad0(0,1), ae0(0,1), aB0(0,1), bc0(0,1), bd0(0,1), be0(0,1), bB0(0,1), cd0(0,1), ce0(0,1), cB0(0,1), de0(0,1), dB0(0,1), eB0(0,1), ab1(0,1), ac1(0,1), ad1(0,1), ae1(0,1), aB1(0,1), bc1(0,1), bd1(0,1), be1(0,1), bB1(0,1), cd1(0,1), ce1(0,1), cB1(0,1), de1(0,1), dB1(0,1), eB1(0,1), ab2(0,1), ac2(0,1), ad2(0,1), ae2(0,1), aB2(0,1), bc2(0,1), bd2(0,1), be2(0,1), bB2(0,1), cd2(0,1), ce2(0,1), cB2(0,1), de2(0,1), dB2(0,1), eB2(0,1), ab3(0,1), ac3(0,1), ad3(0,1), ae3(0,1), aB3(0,1), bc3(0,1), bd3(0,1), be3(0,1), bB3(0,1), cd3(0,1), ce3(0,1), cB3(0,1), de3(0,1), dB3(0,1), eB3(0,1), ab4(0,1), ac4(0,1), ad4(0,1), ae4(0,1), aB4(0,1), bc4(0,1), bd4(0,1), be4(0,1), bB4(0,1), cd4(0,1), ce4(0,1), cB4(0,1), de4(0,1), dB4(0,1), eB4(0,1)]
+35: 670
+17: 1351
+8: 2632
+4: 3949
+2: 7917
+constraint graph 189890
+5078 nodes in both_constraints_5_5
+
+The nice thing about this last approach is that you save a whole level of merging.
+
+Or we could just merge it into the last constraint.
+This saves the most on extraneous node creation:
+
+python iterative.py
+75 variables: [ab0(0,1), ac0(0,1), ad0(0,1), ae0(0,1), aB0(0,1), bc0(0,1), bd0(0,1), be0(0,1), bB0(0,1), cd0(0,1), ce0(0,1), cB0(0,1), de0(0,1), dB0(0,1), eB0(0,1), ab1(0,1), ac1(0,1), ad1(0,1), ae1(0,1), aB1(0,1), bc1(0,1), bd1(0,1), be1(0,1), bB1(0,1), cd1(0,1), ce1(0,1), cB1(0,1), de1(0,1), dB1(0,1), eB1(0,1), ab2(0,1), ac2(0,1), ad2(0,1), ae2(0,1), aB2(0,1), bc2(0,1), bd2(0,1), be2(0,1), bB2(0,1), cd2(0,1), ce2(0,1), cB2(0,1), de2(0,1), dB2(0,1), eB2(0,1), ab3(0,1), ac3(0,1), ad3(0,1), ae3(0,1), aB3(0,1), bc3(0,1), bd3(0,1), be3(0,1), bB3(0,1), cd3(0,1), ce3(0,1), cB3(0,1), de3(0,1), dB3(0,1), eB3(0,1), ab4(0,1), ac4(0,1), ad4(0,1), ae4(0,1), aB4(0,1), bc4(0,1), bd4(0,1), be4(0,1), bB4(0,1), cd4(0,1), ce4(0,1), cB4(0,1), de4(0,1), dB4(0,1), eB4(0,1)]
+35: 670
+17: 931
+8: 1420
+4: 2333
+2: 5754
+constraint graph 189890
+5078 nodes in both_constraints_5_5
+
+
+The other thing I like about the binary approach is that
+it parallelizes.  And there's a lot of room to think of
+heuristics that should allow more efficient merging.  Like,
+should we prioritize related graphs because they give us
+more pruning?  Or should we try to make graphs that merge
+the most dissimilar choices so that we can get closer to
+the ultimate standardized form faster?
+
+Breaking news:
+
+python iterative.py
+105 variables: [ab0(0,1), ac0(0,1), ad0(0,1), ae0(0,1), af0(0,1), aB0(0,1), bc0(0,1), bd0(0,1), be0(0,1), bf0(0,1), bB0(0,1), cd0(0,1), ce0(0,1), cf0(0,1), cB0(0,1), de0(0,1), df0(0,1), dB0(0,1), ef0(0,1), eB0(0,1), fB0(0,1), ab1(0,1), ac1(0,1), ad1(0,1), ae1(0,1), af1(0,1), aB1(0,1), bc1(0,1), bd1(0,1), be1(0,1), bf1(0,1), bB1(0,1), cd1(0,1), ce1(0,1), cf1(0,1), cB1(0,1), de1(0,1), df1(0,1), dB1(0,1), ef1(0,1), eB1(0,1), fB1(0,1), ab2(0,1), ac2(0,1), ad2(0,1), ae2(0,1), af2(0,1), aB2(0,1), bc2(0,1), bd2(0,1), be2(0,1), bf2(0,1), bB2(0,1), cd2(0,1), ce2(0,1), cf2(0,1), cB2(0,1), de2(0,1), df2(0,1), dB2(0,1), ef2(0,1), eB2(0,1), fB2(0,1), ab3(0,1), ac3(0,1), ad3(0,1), ae3(0,1), af3(0,1), aB3(0,1), bc3(0,1), bd3(0,1), be3(0,1), bf3(0,1), bB3(0,1), cd3(0,1), ce3(0,1), cf3(0,1), cB3(0,1), de3(0,1), df3(0,1), dB3(0,1), ef3(0,1), eB3(0,1), fB3(0,1), ab4(0,1), ac4(0,1), ad4(0,1), ae4(0,1), af4(0,1), aB4(0,1), bc4(0,1), bd4(0,1), be4(0,1), bf4(0,1), bB4(0,1), cd4(0,1), ce4(0,1), cf4(0,1), cB4(0,1), de4(0,1), df4(0,1), dB4(0,1), ef4(0,1), eB4(0,1), fB4(0,1)]
+45: 990
+22: 1376
+11: 2123
+5: 4952
+2: 37250
+constraint graph 270572
+6736 nodes in both_constraints_6_5
+
+
 '''
