@@ -258,6 +258,7 @@ def make_constraint_graph(teams, days, variables):
     return constraint
 
 def make_constraint_graph_binary(teams, days, variables):
+    started = time.time()
     constraints = list()
     for tt in range(teams):
         for dd in range(days): # team may do only one thing in a day
@@ -273,15 +274,18 @@ def make_constraint_graph_binary(teams, days, variables):
             constraints.append(only_one)
 
     while len(constraints) > 1:
-        print("{}: {} ({})".format(len(constraints), len(choice_nodes), time.strftime("%H:%M:%S")))
-        merged = [choice(constraints[2*i], const0, constraints[2*i+1]) for i in range(len(constraints) // 2)]
+        merged = list()
+        for ii in range(len(constraints) // 2):
+            print("{}.{}: {} ({:.1f})".format(len(constraints), len(merged), len(choice_nodes), time.time() - started))
+            merged.append(choice(constraints[2*ii], const0, constraints[2*ii+1]))
         if 2 * len(merged) < len(constraints): # len(constraints) is odd
             #merged[-1] = choice(merged[-1], const0, constraints[-1]) # make everything even again
             #merged = [choice(c, const0, constraints[-1]) for c in merged] # this takes the odd one into all
             merged.insert(0, constraints[-1]) # this rotates the oddness
+            #merged.append(constraints[-1])
         constraints = merged
 
-    print("{}: {} ({})".format(len(constraints), len(choice_nodes), time.strftime("%H:%M:%S")))
+    print("{}: {} ({:.1f}s)".format(len(constraints), len(choice_nodes), time.time() - started))
     return constraints[0]
 
 choice_nodes.clear()
