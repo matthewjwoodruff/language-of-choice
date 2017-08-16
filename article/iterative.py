@@ -9,6 +9,7 @@ inf = math.inf
 def algebra(node):
     try:                   node.if0
     except AttributeError: return node.name
+    return "{}({},{})".format(node.name, algebra(node.if0), algebra(node.if1))
     return "{}.{}({},{})".format(node.name, node.rank, algebra(node.if0), algebra(node.if1))
 
 DIG = 10**5
@@ -154,7 +155,8 @@ def viz(graph, name):
     while len(nodes) > 0:
         next_nodes = set()
         for node in nodes:
-            dot.node(str(id(node)), "{}.{}".format(node.name, node.rank))
+            #dot.node(str(id(node)), "{}.{}".format(node.name, node.rank))
+            dot.node(str(id(node)), "{}".format(node.name))
             try:
                 if node.if0 is const0:
                     zero = str(random.random())
@@ -212,29 +214,30 @@ def make_constraint_graph(teams, days, variables):
     for tt in range(teams):
         for dd in range(days):
             team = str(chr(ord('a')+tt))
-            components = [v for v in variables if team in v.name and str(dd) in v.name]
+            components = sorted([v for v in variables if team in v.name and str(dd) in v.name], key=lambda v: v.rank)
             #print("(tt, dd) ({}, {}): {}".format(tt, dd, components))
             all_components.append(components)
 
         for uu in range(tt+1,teams):
             match = "{}{}".format(chr(ord('a')+tt), chr(ord('a')+uu))
-            components = [v for v in variables if match in v.name]
+            components = sorted([v for v in variables if match in v.name], key=lambda v: v.rank)
             #print("(tt, uu) ({}, {}): {}".format(tt, uu, components))
             all_components.append(components)
 
-    all_components.sort(key=lambda c: c[0].rank, reverse=True)
+    all_components.sort(key=lambda c: c[-1].rank, reverse=True)
     constraint = const1
-    for components in all_components:
+    for ii, components in enumerate(all_components):
         only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
         #print("constraint   {}".format(constraint))
         #print("only one     {}".format(only_one))
         constraint = choice(constraint, const0, only_one)
+        print("{}/{}: {}".format(ii, len(all_components), len(choice_nodes)))
     return constraint
 
 choice_nodes.clear()
 
-teams = 3
-days = 3
+teams = 5
+days = 5
 variables = make_variables(teams, days)
 print("variables {}".format(variables))
 constraint_graph = make_constraint_graph(teams, days, variables)
@@ -243,3 +246,82 @@ print("constraint graph {}".format(constraint_graph))
 name = "both_constraints_{}_{}".format(teams, days)
 viz(constraint_graph, name)
 
+'''
+So, is this slow because it's a big problem, or is this
+slow because stack frames are expensive?
+
+Here's 4/3:
+
+variables [ab0(0,1), ac0(0,1), ad0(0,1), aB0(0,1), bc0(0,1), bd0(0,1), bB0(0,1), cd0(0,1), cB0(0,1), dB0(0,1), ab1(0,1), ac1(0,1), ad1(0,1), aB1(0,1), bc1(0,1), bd1(0,1), bB1(0,1), cd1(0,1), cB1(0,1), dB1(0,1), ab2(0,1), ac2(0,1), ad2(0,1), aB2(0,1), bc2(0,1), bd2(0,1), bB2(0,1), cd2(0,1), cB2(0,1), dB2(0,1)]
+0/18: 43
+1/18: 75
+2/18: 98
+3/18: 138
+4/18: 158
+5/18: 190
+6/18: 213
+7/18: 253
+8/18: 365
+9/18: 506
+10/18: 663
+11/18: 928
+12/18: 957
+13/18: 1061
+14/18: 1089
+15/18: 1112
+16/18: 1154
+17/18: 1185
+
+18 constraints.  Note the faster growth of the choice
+dictionary compared with the following.
+
+This is 5/5:
+
+variables [ab0(0,1), ac0(0,1), ad0(0,1), ae0(0,1), aB0(0,1), bc0(0,1), bd0(0,1), be0(0,1), bB0(0,1), cd0(0,1), ce0(0,1), cB0(0,1), de0(0,1), dB0(0,1), eB0(0,1), ab1(0,1), ac1(0,1), ad1(0,1), ae1(0,1), aB1(0,1), bc1(0,1), bd1(0,1), be1(0,1), bB1(0,1), cd1(0,1), ce1(0,1), cB1(0,1), de1(0,1), dB1(0,1), eB1(0,1), ab2(0,1), ac2(0,1), ad2(0,1), ae2(0,1), aB2(0,1), bc2(0,1), bd2(0,1), be2(0,1), bB2(0,1), cd2(0,1), ce2(0,1), cB2(0,1), de2(0,1), dB2(0,1), eB2(0,1), ab3(0,1), ac3(0,1), ad3(0,1), ae3(0,1), aB3(0,1), bc3(0,1), bd3(0,1), be3(0,1), bB3(0,1), cd3(0,1), ce3(0,1), cB3(0,1), de3(0,1), dB3(0,1), eB3(0,1), ab4(0,1), ac4(0,1), ad4(0,1), ae4(0,1), aB4(0,1), bc4(0,1), bd4(0,1), be4(0,1), bB4(0,1), cd4(0,1), ce4(0,1), cB4(0,1), de4(0,1), dB4(0,1), eB4(0,1)]
+0/35: 92
+1/35: 136
+2/35: 208
+3/35: 240
+4/35: 306
+5/35: 332
+6/35: 376
+7/35: 448
+8/35: 480
+9/35: 546
+10/35: 572
+11/35: 616
+12/35: 688
+13/35: 720
+14/35: 786
+15/35: 812
+16/35: 856
+17/35: 928
+18/35: 960
+19/35: 1026
+20/35: 1604
+
+
+So it wouldn't appear that the absolute number of nodes
+adequately explains the amount of time this is taking.
+But perhaps the complexity of the graph.  Maybe I've got
+my order wrong?
+
+Here's 5/5 with everything ordered by the last rank in
+the constraint rather than the first.
+$ pypy3 iterative.py
+variables [ab0(0,1), ac0(0,1), ad0(0,1), ae0(0,1), aB0(0,1), bc0(0,1), bd0(0,1), be0(0,1), bB0(0,1), cd0(0,1), ce0(0,1), cB0(0,1), de0(0,1), dB0(0,1), eB0(0,1), ab1(0,1), ac1(0,1), ad1(0,1), ae1(0,1), aB1(0,1), bc1(0,1), bd1(0,1), be1(0,1), bB1(0,1), cd1(0,1), ce1(0,1), cB1(0,1), de1(0,1), dB1(0,1), eB1(0,1), ab2(0,1), ac2(0,1), ad2(0,1), ae2(0,1), aB2(0,1), bc2(0,1), bd2(0,1), be2(0,1), bB2(0,1), cd2(0,1), ce2(0,1), cB2(0,1), de2(0,1), dB2(0,1), eB2(0,1), ab3(0,1), ac3(0,1), ad3(0,1), ae3(0,1), aB3(0,1), bc3(0,1), bd3(0,1), be3(0,1), bB3(0,1), cd3(0,1), ce3(0,1), cB3(0,1), de3(0,1), dB3(0,1), eB3(0,1), ab4(0,1), ac4(0,1), ad4(0,1), ae4(0,1), aB4(0,1), bc4(0,1), bd4(0,1), be4(0,1), bB4(0,1), cd4(0,1), ce4(0,1), cB4(0,1), de4(0,1), dB4(0,1), eB4(0,1)]
+0/35: 92
+1/35: 136
+2/35: 174
+3/35: 270
+4/35: 342
+5/35: 456
+6/35: 704
+7/35: 974
+8/35: 1478
+9/35: 2542
+
+So maybe it didn't help?  But then again maybe it did?
+You get over the initial hump faster or something?
+
+'''
