@@ -148,6 +148,7 @@ def at_most_n(limit, vars):
     return constraint[0]
 
 def viz(graph, name):
+    counter = 0
     nodes = [graph]
     try:
         dot = graphviz.Digraph(name)
@@ -157,11 +158,13 @@ def viz(graph, name):
         for node in nodes:
             #dot.node(str(id(node)), "{}.{}".format(node.name, node.rank))
             dot.node(str(id(node)), "{}".format(node.name))
+            counter += 1
             try:
                 if node.if0 is const0:
-                    zero = str(random.random())
-                    dot.node(zero, "0")
-                    dot.edge(str(id(node)), zero, label='0')
+                    #zero = str(random.random())
+                    #dot.node(zero, "0")
+                    #dot.edge(str(id(node)), zero, label='0')
+                    pass
                 elif node.if0 is const1:
                     one = str(random.random())
                     dot.node(one, "1")
@@ -171,9 +174,10 @@ def viz(graph, name):
                     next_nodes.add(node.if0)
 
                 if node.if1 is const0:
-                    zero = str(random.random())
-                    dot.node(zero, "0")
-                    dot.edge(str(id(node)), zero, label='1')
+                    #zero = str(random.random())
+                    #dot.node(zero, "0")
+                    #dot.edge(str(id(node)), zero, label='1')
+                    pass
                 elif node.if1 is const1:
                     one = str(random.random())
                     dot.node(one, "1")
@@ -184,8 +188,8 @@ def viz(graph, name):
             except AttributeError: pass
         nodes = next_nodes
 
+    print("{} nodes in {}".format(counter, name))
     dot.render(name, view=False)
-    print(name)
 
 # A Possibly More Realistic Example?
 # Let's say we want to do a round-robin tournament among
@@ -214,6 +218,7 @@ def make_constraint_graph(teams, days, variables):
     for tt in range(teams):
         for dd in range(days):
             team = str(chr(ord('a')+tt))
+
             components = sorted([v for v in variables if team in v.name and str(dd) in v.name], key=lambda v: v.rank)
             #print("(tt, dd) ({}, {}): {}".format(tt, dd, components))
             all_components.append(components)
@@ -224,26 +229,46 @@ def make_constraint_graph(teams, days, variables):
             #print("(tt, uu) ({}, {}): {}".format(tt, uu, components))
             all_components.append(components)
 
-    all_components.sort(key=lambda c: c[-1].rank, reverse=True)
+    all_components.sort(key=lambda c: c[0].rank, reverse=True)
     constraint = const1
-    for ii, components in enumerate(all_components):
-        only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
-        #print("constraint   {}".format(constraint))
-        #print("only one     {}".format(only_one))
-        constraint = choice(constraint, const0, only_one)
-        print("{}/{}: {}".format(ii, len(all_components), len(choice_nodes)))
+    components_considered = set()
+    try:
+        while len(all_components) > 0:
+            overlaps = [len(components_considered.intersection(components)) for components in all_components]
+            biggest_overlap = max(overlaps)
+            components_having_biggest_overlap = [c for c,o in zip(all_components, overlaps) if o == biggest_overlap]
+            chbo = components_having_biggest_overlap
+            # break tie by taking shortest
+            lengths = [len(c) for c in chbo]
+            shortest = min(lengths)
+            shortest_chbos = [c for c,n in zip(chbo, lengths) if n == shortest]
+            # break tie by taking last-ranked first variable
+            ranks = [c[0].rank for c in shortest_chbos]
+            maxrank = max(ranks)
+            last_ranked = [c for c,r in zip(shortest_chbos, ranks) if r == maxrank]
+            # if there's still a tie, just take the first one
+            components = last_ranked[0]
+            only_one = choice(at_most_n(1, components), const0, at_least_n(1, components))
+            constraint = choice(constraint, const0, only_one)
+            all_components = [c for c in all_components if c is not components]
+            print("{}: {}".format(len(all_components), len(choice_nodes)))
+    except KeyboardInterrupt:
+        pass
     return constraint
 
 choice_nodes.clear()
 
-teams = 5
+teams = 6
 days = 5
 variables = make_variables(teams, days)
-print("variables {}".format(variables))
+print("{} variables: {}".format(len(variables), variables))
 constraint_graph = make_constraint_graph(teams, days, variables)
-print("constraint graph {}".format(constraint_graph))
-
+cgtext = repr(constraint_graph)
+print("constraint graph {}".format(len(cgtext)))
 name = "both_constraints_{}_{}".format(teams, days)
+with open("{}.{}".format(name, "text"), 'w') as fp:
+    fp.write(cgtext)
+    fp.write("\n")
 viz(constraint_graph, name)
 
 '''
@@ -324,4 +349,84 @@ variables [ab0(0,1), ac0(0,1), ad0(0,1), ae0(0,1), aB0(0,1), bc0(0,1), bd0(0,1),
 So maybe it didn't help?  But then again maybe it did?
 You get over the initial hump faster or something?
 
+So here's the full 5/5 that I allowed to run to completion:
+
+0/35: 92
+1/35: 136
+2/35: 208
+3/35: 240
+4/35: 306
+5/35: 332
+6/35: 376
+7/35: 448
+8/35: 480
+9/35: 546
+10/35: 572
+11/35: 616
+12/35: 688
+13/35: 720
+14/35: 786
+15/35: 812
+16/35: 856
+17/35: 928
+18/35: 960
+19/35: 1026
+20/35: 1604
+21/35: 2590
+22/35: 4221
+23/35: 7343
+24/35: 12681
+25/35: 21321
+26/35: 36855
+27/35: 36995
+28/35: 49518
+29/35: 49670
+30/35: 59656
+31/35: 59808
+32/35: 59840
+33/35: 64356
+34/35: 64425
+
+And here's if I order by overlap with current variables:
+
+34: 92
+33: 136
+32: 208
+31: 240
+30: 306
+29: 332
+28: 376
+27: 448
+26: 480
+25: 546
+24: 572
+23: 616
+22: 688
+21: 720
+20: 786
+19: 812
+18: 856
+17: 928
+16: 960
+15: 1026
+14: 1604
+13: 2590
+12: 4221
+11: 7343
+10: 12681
+9: 21321
+8: 36855
+7: 36995
+6: 49518
+5: 49670
+4: 59656
+3: 59808
+2: 59840
+1: 64356
+0: 64425
+
+
+Odd that it's exactly the same...
+
+But is it my imagination or did this version go faster?
 '''
