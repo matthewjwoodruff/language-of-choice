@@ -78,9 +78,6 @@ def substitute(node, rank, value):
 
 def choice(index, if0, if1):
     try:
-        return choice_nodes[(index, if0, if1)]
-    except KeyError: pass
-    try:
         if if0.value == 0:
             if if1.value == 0:
                 return const0
