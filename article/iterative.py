@@ -290,8 +290,8 @@ def make_constraint_graph_binary(teams, days, variables):
 
 choice_nodes.clear()
 
-teams = 7
-days = 7
+teams = 4
+days = 3
 variables = make_variables(teams, days)
 print("{} variables: {}".format(len(variables), variables))
 constraint_graph = make_constraint_graph_binary(teams, days, variables)
