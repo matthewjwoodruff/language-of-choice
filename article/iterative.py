@@ -78,6 +78,9 @@ def substitute(node, rank, value):
 
 def choice(index, if0, if1):
     try:
+        return choice_nodes[(index, if0, if1)]
+    except KeyError: pass
+    try:
         if if0.value == 0:
             if if1.value == 0:
                 return const0
@@ -105,6 +108,7 @@ def choice(index, if0, if1):
     new_index = variable(minimum_rank_node.name, minimum_rank_node.rank)
     new_node = collapse_irrelevant(new_index, left, right)
 
+    choice_nodes[(index, if0, if1)] = new_node
     return new_node
 
 def at_least_n(limit, vars):
@@ -148,9 +152,10 @@ def at_most_n(limit, vars):
                 constraint[ii] = choice(variable, left, right)
     return constraint[0]
 
-def viz(graph, name):
+def viz(graph, name, zeros=False):
     counter = 0
     nodes = [graph]
+    done_nodes = set()
     try:
         dot = graphviz.Digraph(name)
     except NameError: return
@@ -162,10 +167,10 @@ def viz(graph, name):
             counter += 1
             try:
                 if node.if0 is const0:
-                    #zero = str(random.random())
-                    #dot.node(zero, "0")
-                    #dot.edge(str(id(node)), zero, label='0')
-                    pass
+                    if zeros:
+                        zero = str(random.random())
+                        dot.node(zero, "0")
+                        dot.edge(str(id(node)), zero, label='0')
                 elif node.if0 is const1:
                     one = str(random.random())
                     dot.node(one, "1")
@@ -175,10 +180,10 @@ def viz(graph, name):
                     next_nodes.add(node.if0)
 
                 if node.if1 is const0:
-                    #zero = str(random.random())
-                    #dot.node(zero, "0")
-                    #dot.edge(str(id(node)), zero, label='1')
-                    pass
+                    if zeros:
+                        zero = str(random.random())
+                        dot.node(zero, "0")
+                        dot.edge(str(id(node)), zero, label='1')
                 elif node.if1 is const1:
                     one = str(random.random())
                     dot.node(one, "1")
@@ -187,7 +192,8 @@ def viz(graph, name):
                     dot.edge(str(id(node)), str(id(node.if1)), label='1')
                     next_nodes.add(node.if1)
             except AttributeError: pass
-        nodes = next_nodes
+            done_nodes.add(node)
+        nodes = next_nodes.difference(done_nodes)
 
     print("{} nodes in {}".format(counter, name))
     dot.render(name, view=False)
@@ -281,8 +287,8 @@ def make_constraint_graph_binary(teams, days, variables):
         if 2 * len(merged) < len(constraints): # len(constraints) is odd
             #merged[-1] = choice(merged[-1], const0, constraints[-1]) # make everything even again
             #merged = [choice(c, const0, constraints[-1]) for c in merged] # this takes the odd one into all
-            merged.insert(0, constraints[-1]) # this rotates the oddness
-            #merged.append(constraints[-1])
+            #merged.insert(0, constraints[-1]) # this rotates the oddness
+            merged.append(constraints[-1])
         constraints = merged
 
     print("{}: {} ({:.1f}s)".format(len(constraints), len(choice_nodes), time.time() - started))
@@ -290,8 +296,8 @@ def make_constraint_graph_binary(teams, days, variables):
 
 choice_nodes.clear()
 
-teams = 4
-days = 3
+teams = 6
+days = 5
 variables = make_variables(teams, days)
 print("{} variables: {}".format(len(variables), variables))
 constraint_graph = make_constraint_graph_binary(teams, days, variables)
@@ -302,6 +308,21 @@ with open("{}.{}".format(name, "text"), 'w') as fp:
     fp.write(cgtext)
     fp.write("\n")
 viz(constraint_graph, name)
+
+#a = variable('a', 0) 
+#b = variable('b', 1) 
+#c = variable('c', 2) 
+#d = variable('d', 3) 
+#e = variable('e', 4) 
+#f = variable('f', 5) 
+#g = variable('g', 6) 
+#h = variable('h', 7) 
+#i = variable('i', 8)
+#
+#tree = choice(choice(b, e, h), choice(a, c, f), choice(d, g, i))
+#
+#print(tree)
+#viz(tree, "tree", True)
 
 '''
 So, is this slow because it's a big problem, or is this
